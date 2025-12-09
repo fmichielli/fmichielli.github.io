@@ -1,0 +1,438 @@
+---
+title: "The Impact of India's Mid-Day Meals Program on Food Expenditure"
+author: "Akshay Kalyan (ak5309), Dmitry Vasiliev (dv2505), Frankie Michielli (fcm2118)"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  pdf_document:
+    keep_tex: false
+    fig_caption: true
+    latex_engine: pdflatex
+  html_document:
+    df_print: paged
+header-includes:
+- \usepackage{hyperref}
+- \usepackage{placeins}
+biblio-style: apsr
+geometry: margin=1in
+fontfamily: mathpazo
+fontsize: 11pt
+endnote: false
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r libraries, echo=FALSE}
+library(tidyverse)
+library(stargazer)
+library(kableExtra)
+library(modelsummary) 
+```
+
+```{r load, echo=FALSE}
+load("output/cleaned_output.RData")
+```
+
+# 1. Introduction
+
+India's Mid-Day Meal Scheme (MDM) is the [world’s largest school meal provision program](https://www.artefactmagazine.com/2023/04/21/inside-the-worlds-largest-school-meal-programme/) and is widely regarded as one of the country’s most successful projects. The nation-wide program serves a hot meal to 120 million children every school day. MDM has been credited with boosting school enrollment and attendance rates, improving nutrition and health outcomes of recipient children, and even providing [intergenerational nutritional benefits](https://pmc.ncbi.nlm.nih.gov/articles/PMC8275765/).
+
+This report investigates the impact of India's Mid-Day Meal program on household food expenditure. Specifically, we explore the question: **does the implementation of MDM reduce, increase, or keep static the average per-capita monthly expenditure on food?** 
+
+## Policy Relevance
+
+Through this question, we aim to explore the immediate impact of MDM on one component of household expenditure. These results may further the understanding of household spending patterns in relation to food security. 
+
+This research seeks to further understand how households allocate their resources around food. This builds upon prior studies, which show that even the ultra-poor, living at under \$1 per day, do not spend all of their income on food or other necessary commodities. By contrast, the poor spend significant amounts of money on alcohol, tobacco, and festivals. According to research by [Banerjee and Duflo](https://pubs.aeaweb.org/doi/pdfplus/10.1257/jep.21.1.141), poor households in Udaipur, India in 2004 spent roughly 5% of their income on alcohol and tobacco. Furthermore, “more than 99 percent of the extremely poor households spent money on a wedding, a funeral, or a religious festival. The median household spent 10 percent of its annual budget on festivals.” They conclude that “the typical poor household in Udaipur could spend up to 30 percent more on food than it actually does, just based on what it spends on alcohol, tobacco, and festivals.”
+
+This sets the stage for the policy relevance of our question. When children are provided free meals at school, do households feel they have increased their disposable income and shift that income elsewhere? Or, do the meals fill a critical nutritional gap, leaving the household expenditure unchanged and enabling the members to consume more and higher quality meals?
+
+# 2. Background
+
+India’s Mid-Day Meal Scheme (MDM) was formally launched in 1995 as a centrally sponsored program to improve child nutrition and encourage school attendance. Initially, the program involved the distribution of dry rations (primarily uncooked grains) to children in government and government-aided primary schools.
+
+A major policy shift occurred in 2001, following a Supreme Court directive that mandated all states to provide cooked mid-day meals to schoolchildren. This ruling codified minimum nutritional standards: each meal must provide at least 300 calories and 8–12 grams of protein, served for a minimum of 200 school days per year. The meals are provided free of cost to children enrolled in public and government-aided schools, with the goal of reducing classroom hunger, improving nutritional outcomes, and enhancing educational attainment.
+
+Responsibility for implementation lies with the state governments, leading to **variation in rollout timing** and quality across states. Some states adopted hot meal programs well before the court mandate, while others scaled up only after 2001. **This staggered rollout provides a quasi-experimental setting that forms the basis for our empirical strategy.**
+
+# 3. Data description
+
+We use household-level data from the National Sample Survey – Household Consumer Expenditure Survey (NSS-CES), covering survey waves from 51 to 63, spanning years from 1994 to 2006. The NSS-CES is an annual survey representative of the entire Indian population that reports detailed information on household consumption patterns, demographic characteristics, and access to social programs across Indian states and districts. Within each wave, the raw data is structured in blocks, which are each separate dataframes with responses to a different set of questions. Thus, data for each surveyed household is spread over multiple independent dataframes.
+
+Our analysis first aggregates household-level observations to the district-year level; from there, we aggregate to the state-year level, allowing us to construct a panel dataset and track changes in average per capita expenditure over time. Wave 54 (covering 1998) was not downloadable from the data source, and was thus excluded from the analysis. 
+
+The main outcome variable of interest is average monthly per capita food expenditure. This was constructed at the state-level using the average household food expenditure and average household size. Other informative variables include a measure of household food sufficiency and whether a household purchases food from subsidized ration stores. Put together, these variables help us understand state-level patterns of household food sufficiency and security. This enables us to examine the impact of the implementation of MDM on household food expenditure.
+
+For Wave 60 (Year 2003), data on monthly food expenditure was provided for a only few food item categories in one survey block. Weekly food expenditure was provided for other items in another block. An adjusted estimate of the total monthly food expenditure was obtained by multiplying the weekly food expenditure by four and adding the other set of monthly food expenditure. 
+
+Please see the Appendix for more information on the questions used in each survey wave and for additional data manipulation details and assumptions.
+
+Our analysis focuses on **13 major Indian states**, representing over 80% of the national population during the study period. For data on timing of the treatment in each state, we use verified state-level implementation dates for MDM from policy audits and government records originally compiled by [Jayaraman, Simroth, & de Vericourt, 2016.](https://pseweb.eu/ydepot/semin/texte1011/JAY2011IMP.pdf) Because these researchers were only able to find reliable information about implementation timing for 15 states (two of which implemented MDM long before our data begins), we similarly restrict our analysis to 13 states. A table with the implementation date of MDM in each state can be found in the Appendix.
+
+# 4. Descriptive statistics
+
+The following chart shows the temporal distribution of MDM adoption across different states. Each purple bar represents the cumulative number of states that have already adopted the program by that year, with the black line representing new MDM-adopter states. Apart from two early adopters (Tamil Nadu in 1982 and Gujarat in 1986), most states (13) implemented MDM in the early 2000s. In total, 15 states have adopted MDM and have reliable information on the timing of this implementation.
+
+\FloatBarrier
+
+```{r sumstats, graph 1, fig.cap="MDM Adoption", fig.width=7, fig.height=4,echo=FALSE}
+chart1
+```
+
+\FloatBarrier
+
+The following four charts show state-level average per-capita food expenditure for each of the treated states. The shaded bars represent the minimum and maximum district-level average within each state. The states are separated by treatment year; for example, the first chart shows only the states that adopted MDM in 2002. This helps us see more clearly each state's expenditure trends over time.
+
+\FloatBarrier
+
+```{r,graph 2, fig.cap="Per Capita Food Expenditure for 2002 Treated States", fig.width=7, fig.height=4,echo=FALSE}
+
+chart2
+```
+
+\FloatBarrier
+
+As seen above, the time series for Chhattisgarh begins in 2000 as data for the state was not recorded in earlier survey waves. We see both Rajasthan and Chhattisgarh following fairly similar post-treatment trends in average per capita monthly food expenditure.
+
+\FloatBarrier
+
+```{r,graph 3, fig.cap="Per Capita Food Expenditure for 2003 Treated States", fig.width=7, fig.height=4,echo=FALSE}
+chart3
+```
+
+\FloatBarrier
+
+The time series for Uttaranchal begins in 2000 as data for the state was not recorded in earlier survey waves. Among these states implementing MDM in 2003, average per capita monthly food expenditure rises more in Andhra Pradesh and Maharashtra after 2004 than in Karnataka or Uttaranchal. We see similar pre-treatment trends only until 1999 when the average for Andhra Pradesh rises much more.
+
+\FloatBarrier
+
+```{r,graph 4, fig.cap="Per Capita Food Expenditure for 2004 Treated States", fig.width=7, fig.height=4,echo=FALSE}
+chart4
+```
+
+\FloatBarrier
+
+The five states treated in 2004 seem to follow a similar trend until 2000, when Haryana and Himachal Pradesh diverged from Madhya Pradesh, Orissa, and Uttar Pradesh. There appears to be a slight decline in average per capita food expenditure in 2004, the treatment year, for all States. Furthermore, Madhya Pradesh, Orissa, and Uttar Pradesh follow similar post-treatment trends.
+
+\FloatBarrier
+
+```{r,graph 5, fig.cap="Per Capita Food Expenditure for 2005 Treated States", fig.width=7, fig.height=4,echo=FALSE}
+chart5
+```
+
+\FloatBarrier
+
+One finding that stands out from the charts above is the extreme year-over-year fluctuations for certain states. In some years, the average per capita food expenditure in the district with the highest expenditure more than doubles. See, for example, Haryana in 2003. This may indicate that there is an issue with our data management and aggregation, as it seems unlikely a district would see such large swings within a short period of time. Alternatively, it may reflect the fact that [India went through a period of redistricting](https://www.hbs.edu/ris/Publication%20Files/14-051_6beba5c6-4c63-455d-9f02-0f6bd9364877.pdf) starting in 2002 based on the 2001 census.
+
+The findings from these charts helps motivate our study. Across all states, we observe **year-over-year fluctuations** in average monthly food expenditure per capita, with trends that vary notably between states and over time. In some cases – such as states treated in 2003 — food expenditure shows a sharp decrease before MDM implementation. In others, like Chhattisgarh (2002 treatment year), expenditure levels remain relatively flat throughout the study period.
+
+These different patterns suggest that expenditure trajectories may reflect underlying economic, demographic, and climatic factors. The variation also reinforces the importance of controlling for state-level heterogeneity in our empirical strategy. Importantly, upon preliminary visual inspection there is no consistent or uniform post-treatment decline, indicating that the **MDM** **program may supplement rather than replace household food spending**.
+
+Overall, the descriptive trends highlight the heterogeneous household behavior and underscore the need for a more rigorous, regression-based analysis to isolate causal impacts.
+
+\FloatBarrier
+
+```{r, graph 6, fig.cap="Per Capita Food Expenditure vs Total Per Capita Expenditure in 2004", fig.width=7, fig.height=4,echo=FALSE}
+chart7
+```
+
+\FloatBarrier
+
+The scatterplot of average monthly per capita food expenditure vs average monthly per capita household expenditure for 2001 shows a very high positive correlation between the two variables. This may be explained by the fact that households that spend more money overall might incur a higher cost of living. At state level, this reflects the fact that food is likely more expensive in states with overall higher cost of living. Or, it may represent that those who are able to afford more overall will spend more money on food. Overall, it seems that per capita food expenditure makes up roughly one-third to one-half of overall per capita expenditure. This represents a significant amount of spending on food.
+
+\newpage
+
+# 5. Empirical strategy
+
+Our analysis is conducted at the state-year level, structured as a panel dataset covering the period 2000 to 2006. The treatment Mid-Day Meal Scheme (MDM) is at the state level. To ensure representativeness, estimates are weighted by state population, using estimates derived from official 2001 census data.
+
+The treatment is defined as the introduction of MDM with full statewide coverage, based on implementation dates sourced from state audit and budget reports (Jayaraman, Simroth, & de Vericourt, 2016). A state is considered treated from the year its corresponding state fully rolled out the program. We restrict our analysis to the years 2000 through 2006, as verified MDM implementation dates are available and our panel is fully balanced in this period. This time frame enables us to include a balanced pre- and post-treatment window of approximately three years, which allows for the assessment of both short-term pre-trends and post-treatment dynamics in household expenditure patterns.
+
+We apply a staggered difference-in-differences (DiD) design, leveraging variation in MDM rollout timing across states. This approach compares household expenditure outcomes in districts belonging to early-adopting states with those in districts from later-adopting states. Our baseline specification includes state fixed effects (to absorb time-invariant differences between states) and year fixed effects (to control for national trends and shocks).
+
+We recognize that state-specific, time-varying shocks—such as climate-related disasters—pose a threat to internal validity if they impact states differently over time. For example, coastal states are more vulnerable to floods, while inland districts may experience more frequent droughts, potentially influencing food insecurity and household spending. To address this, we conducted desk research to identify major climate shocks during the study period and included controls for extreme weather events in our regression models. To control for state-specific economic fluctuations, we also control for average per-capita household expenditure.
+
+We acknowledge the following limitations in our identification strategy:
+
+-   We have not examined distributional effects by including income as a control. Instead we use a proxy (per capita household expenditure). While MDM is likely more impactful for lower-income households, we cannot currently isolate effects by income group.
+
+-   Our data is not restricted to households with school-age children, which may dilute the observed impact. This is due to data management challenges.
+
+-   We do not control for the share of public vs. private school enrollment, even though MDM only applies to public schools. States with higher private school prevalence may experience smaller effects.
+
+\newpage
+
+## Population Regression Function
+
+To implement a Staggered DiD, we explore three models, specified below:
+
+$$
+  Y_{st} = {\beta_0} + {\beta_1}MDM_{st} + \lambda_{s} + \theta_{t}  + \epsilon_{s}
+ \qquad \hbox{(Model 1: No Weights)}
+$$
+
+$$
+  Y_{st} = {\beta_0} + {\beta_1}MDM_{st} + \lambda_{s} + \theta_{t}  + \epsilon_{s}
+  \qquad \hbox{(Model 2: Weight by State Population)}
+$$
+
+$$
+ Y_{st} = {\beta_0} + {\beta_1}MDM_{st} + {\beta_2}Climate\_Shock_{st} + {\beta_3}Household\_Exp_{st} + \lambda_{s} + \theta_{t} + \epsilon_{s}$$
+
+$$
+\hbox {(Model 3:  Weight by State Population)}
+$$
+
+where subscripts s and *t* indicate state *s* and year *t*, respectively.
+
+-   ${Y}$: Outcome variable — average **monthly** **household food expenditure** per capita in state, year.
+
+-   ${MDM}$: Treatment indicator — equals 1 if the **Mid-Day Meal Scheme** was implemented in state *s* in year *t*.
+
+-   ${Climate\_Shock}$**​**: Binary variable indicating the occurrence of **major climate shocks** (e.g., droughts, floods) in state *s* during year *t*.
+
+-   ${Household\_Exp}$: Average monthly household expenditure per capita per state each year.
+
+-   ${\lambda}$: State fixed effects, controlling for time-invariant unobserved heterogeneity at the state level.
+
+-   ${\theta}$: Year fixed effects, capturing national trends and common time shocks.
+
+-   ${\epsilon}$: Idiosyncratic error term, clustered at the *state* level to account for intra-state correlation in treatment and unobservables.
+
+\newpage
+
+# 6. Findings
+
+## Two-Way Fixed Effects
+
+The table below shows the regression results from the Two-Way Fixed Effects model:
+
+\FloatBarrier
+
+```{r, echo=FALSE}
+models <- list("Model 1" = reg1, "Model 2" = reg2, "Model 3" = reg3)
+
+modelsummary(models, 
+             output = "kableExtra")
+```
+
+-   **Model 1:** The coefficient of interest is `r round(summary(reg1)$coeftable["D", "Estimate"],3)` with a standard error of `r round(summary(reg1)$coeftable["D", "Std. Error"],3)`. This is not statistically significant at the 5% level of significance. However, the coefficient can be interpreted to say that a state adopting the MDMS was on average associated with a decline of Rs. `r round(summary(reg1)$coeftable["D", "Estimate"],3)*(-1)` in the state-average per capita monthly expenditure on food, when accounting for time invariant factors that vary between states, and time varying factors shared by all states.
+-   **Model 2:** The coefficient of interest is `r round(summary(reg2)$coeftable["D", "Estimate"],3)` with a standard error of `r round(summary(reg2)$coeftable["D", "Std. Error"],3)`. This is not statistically significant at the 5% level of significance. However, the coefficient can be interpreted to say that a state adopting the MDMS was on average associated with a decline of Rs. ``` r round(summary(reg2)$coeftable["D", "Estimate"],3)``*(-1) ``` in the state-average per capita monthly expenditure on food, when accounting for time invariant factors that vary between states, and time varying factors shared by all states.
+-   **Model 3:** The coefficient of interest is `r round(summary(reg3)$coeftable["D", "Estimate"],3)` with a standard error of `r round(summary(reg3)$coeftable["D", "Std. Error"],3)`. This is not statistically significant at the 5% level of significance. However, the coefficient can be interpreted to say that a state adopting the MDMS was on average associated with a decline of Rs. ``` r round(summary(reg3)$coeftable["D", "Estimate"],3)``*(-1) ``` in the state-average per capita monthly expenditure on food, when accounting for time invariant factors that vary between states, time varying factors shared by all states, climate shocks, and average per capita monthly household expenditure.
+
+\newpage
+
+## Event Study
+
+The event study plots for each model are shown below. The event study specification estimates a treatment effect for **every period** relative to the base period. The event study models represent a dynamic variation of the staggered DID analysis, which breaks down the treatment impact into year by year effects. By comparison, the models above show a static effect of the MDM implementation over all treatment years.
+
+The event studies below enable us to: 1) assess pre-treatment parallel trends, and 2) assess a post-treatment effect for each relative year.
+
+\newpage
+
+**Model 1:**
+
+\FloatBarrier
+
+```{r graph 16, fig.cap="Model 1 Event Study", fig.width=7, fig.height=4, echo=FALSE}
+es_plot1
+```
+
+As shown above, the results from Model 1 indicate pre-treatment parallel trends and **no** statistically post-treatment effect of MDM on average monthly per capita food expenditure. All coefficients are not statistically different from zero. In the pre-treatment period, this suggests parallel trends between the treated and control group. In the post-treatment period, this suggests no differences between the treated and control group, indicating a lack of a treatment effect.
+
+\FloatBarrier
+
+\newpage
+
+**Model 2:**
+
+\FloatBarrier
+
+```{r graph 18, fig.cap="Model 2 Event Study", fig.width=7, fig.height=4, echo=FALSE}
+es_plot2
+```
+
+\FloatBarrier
+
+As with the Model 1, the event study plot for Model 2 (which weights state observations by state population) indicates pre-treatment parallel trends and **no** statistically post-treatment effect of MDM on average monthly per capita food expenditure. All coefficients are not statistically different from zero. In the pre-treatment period, this suggests parallel trends between the treated and control group. In the post-treatment period, this suggests no differences between the treated and control group, indicating a lack of a treatment effect.
+
+\newpage
+
+**Model 3:**
+
+\FloatBarrier
+
+```{r graph 19, fig.cap="Model 3 Event Study", fig.width=7, fig.height=4, echo=FALSE}
+es_plot3
+```
+
+\FloatBarrier
+
+In comparison to Models 1 and 2, Model 3, which controls for state-level climate shocks and heterogenous effects of economic shocks (through the average per capita monthly expenditure control), does not show full evidence of parallel pre-trends. This is indicated by the statistically significant negative coefficient on the time period -4, or four years before treatment. This suggests that the difference in the average monthly per capita food expenditure between each pre-treatment period and the reference period for treated states was lower than the same difference for the comparison group of states. The post treatment results show a very slight statistically significant increase in average monthly per-capita food expenditure in the second and third year after the treatment. If we could assume parallel trends, this would indicate a *positive* impact of MDM implementation of food expenditure. However, given our lack of parallel trends in the pre-treatment period, we are unable to make this conclusion.
+
+\newpage
+
+## Goodman-Bacon Decomposition:
+
+The Goodman-Bacon decomposition is a method to understand the composition of the staggered difference in differences estimator. It decomposes the weights of the different types of state-to-state comparisons made in the two-way fixed effects regression.
+
+\FloatBarrier
+
+```{r graph 20, fig.cap="Goodman-Bacon Decomposition for Model 1", fig.width=7, fig.height=4, echo=FALSE}
+bacon_chart
+```
+
+\FloatBarrier
+
+The figure above shows the Goodman-Bacon decomposition for Model 1. The event-study analysis with Model 1 suffers from some inadequacies. Firstly, there is no true control “Never Treated” group where the event/treatment has not occurred, since we have restricted our analysis to the 13 states for which we had definitive information on the MDM scheme implementation. Next, as the Bacon decomposition shows, the coefficient estimates of our event study include earlier treated states as a comparison group for later treated states, which is a low-quality comparison, since the treatment may likely have already caused a deviation of the outcome variable in those earlier treated states. These are challenges to the internal validity of our analysis because they imply that parallel trends no longer hold within the DID setup. As the chart shows, our Model 1 event study has some of the “bad” Later vs Earlier Treated comparisons that are weighted quite heavily and influence the coefficient estimates of the event study. The Earlier vs Later Treated comparisons are good for the purpose of our study but receive only 50% weightage in the non-decomposed Model 1 event study. When we consider only the "good" comparisons, we see that the average effect of the treatment is negative, and has a larger magnitude than what we obtained from the TWFE Staggered DID regression analysis. See table below.
+
+```{r, echo=FALSE}
+kable(two_by_two)
+```
+
+\FloatBarrier
+
+Due to difficulties implementing the Bacon decomposition for models with controls and weights, we only conduct the decomposition on Model 1.
+
+# 7. Conclusion
+
+This study examines the impact of India’s Mid-Day Meal Scheme (MDM) on household food expenditure using state-level panel data from 13 major Indian states between 2000 and 2006. We leverage the phased state-wise rollout of the program to use a staggered DID event study framework to assess whether the provision of free school meals alters household resource allocation, measured by average monthly per capita food expenditure.
+
+Although the TWFE models indicated a negative impact on household expenditures, the estimates were not statistically significant. More importantly, TWFE provides an average treatment effect across all post-treatment periods, which fails to capture potential changes over time. To address this limitation, event study models were implemented to explore the dynamic effects of the policy across different years.
+
+The first two event study models generally show evidence consistent with the assumption of parallel pre-treatment trends. **Overall our results show that there was likely little to no effect of MDM implementation on monthly per capita food expenditure.**
+
+The event study in Model 3 indicates that average per capita monthly food expenditure may have increased slightly in some post-treatment years. Without reference to the composition of food consumption, we note that this pattern could be explained by these theoretical mechanisms documented in the literature:
+
+-   **Child influence and aspirational effects:** Exposure to institutional feeding can shift household norms, especially when children serve as behavioral change agents (Banerjee et al., 2015).
+-   **Complementary nutritional investments:** Parents may respond to school meals by improving other meals at home, complementing rather than substituting government efforts (Afridi, 2010).
+
+## Policy Implications
+
+Our findings suggest that MDM may be a *complement to household food consumption,* rather than a replacement. School meals not only address immediate nutritional gaps but may also shift household preferences toward higher-quality or increased consumption. Policymakers must assess the potential of school-based programs to generate indirect behavioral effects—especially when paired with complementary interventions in nutrition, education, or conditional cash transfers.
+
+Due to our data limitations, methodological caveats, and some unaddressed validity concerns, we recommend *interpreting these results with caution* and using them as a foundation for more targeted and rigorous statistical evaluations.
+
+## Limitations and Validity Concerns
+
+**Internal Validity:**
+
+-   Our sample includes **all households**, not only those with school-aged children, which may introduce **measurement error.**
+
+-   We do not control for **public vs. private school enrollment**, though MDM applies only to government schools, potentially misclassifying exposure.
+
+-   We have not examined distributional effects by including income as a control. 
+
+-   While we include controls for major climate shocks, **unobserved district-level shocks** or concurrent policy programs may bias estimates.
+
+-   Our fixed effects specifications only account for unobserved sources of bias to the extent that they vary across either one of entities or time - simultaneous variations in unobserved confounders are not accounted for.
+
+**External Validity**:
+
+-   Our dataset includes only **13 large Indian states**, which account for the majority—but not all—of the population. The findings may not generalize to smaller states or union territories with different program rollout dynamics.
+
+-   Findings will likely not generalize to more specific contexts such as urban-only or rural-only study regions, or to other countries.
+
+## Next Steps
+
+Future research should:
+
+-   Use household-level data on actual **MDM receipt** to better identify treatment exposure.
+
+-   Obtain more detailed data on MDM implementation in the remaining states not included in this analysis.
+
+-   Conduct **analysis** by income, urban/rural geography, and school type to explore heterogeneous impacts.
+
+-   Extend outcome measures to include **non-food spending** and child-level outcomes (health, education) to assess broader welfare effects.\
+
+\newpage
+
+# 8. References
+
+Afridi, F. (2010). Child welfare programs and child nutrition: Evidence from a mandated school meal program in India. Journal of Development Economics, 92(2), 152–165. <https://doi.org/10.1016/j.jdeveco.2009.02.002>
+
+Banerjee, A. V., & Duflo, E. (2006). The Economic Lives of the Poor. SSRN Electronic Journal, 21(1). <https://doi.org/10.2139/ssrn.942062> 
+
+Banerjee, A., Duflo, E., Goldberg, N., Karlan, D., Osei, R., Parienté, W., … Udry, C. (2015). A multifaceted program causes lasting progress for the very poor: Evidence from six countries. Science, 348(6236), 1260799. <https://doi.org/10.1126/science.1260799>
+
+Iyer, L., & Reddy, M. (2013). Redrawing the Lines: Did Political Incumbents Influence Electoral Redistricting in the World’s Largest Democracy? <https://www.hbs.edu/ris/Publication%20Files/14-051_6beba5c6-4c63-455d-9f02-0f6bd9364877.pdf>
+
+Kaur, S. (2011). Nominal wage rigidity in village labor markets. NBER Working Paper No. 17560. National Bureau of Economic Research. <https://doi.org/10.3386/w17560>
+
+Stolper, Harold (2025). Assignment 6: Difference-in-differences with Staggered Treatment. <https://hreplots.github.io/U6614/Lectures-gh/Lecture12-gh/Assignment6-StaggeredDID-SOLUTIONS-FULL.html>
+
+Subramanian, S., & Deaton, A. (1996). The demand for food and calories. Journal of Political Economy, 104(1), 133–162. <https://doi.org/10.1086/262020>
+
+Venkateswaran, J. (2023, April 21). Inside the World’s largest school meal programme  — Artefact. Artefact. <https://www.artefactmagazine.com/2023/04/21/inside-the-worlds-largest-school-meal-programme/>
+
+\newpage
+
+# 9. Appendices
+
+**Summary of Variables Used from Each Survey Wave**
+
+This table shows the key variables that we obtained from the different survey data “block” dataframes from different survey waves.
+
+\FloatBarrier
+
+```{r, echo=FALSE}
+kable(var_summary)
+```
+
+\FloatBarrier
+
+Note that monthly food expenditure for wave 60 was calculated as such: (7-Day Food Expenditure)\*4+ 30 Day Food Expenditure [Monthly food exp = 4\*B6_q4 + B5_q4].
+
+For most survey waves, the food sufficiency question was “Do all members get two square meals?” and respondents answered 1 for Yes, throughout the year, 2 for some months, and 3 for No. This data was converted to a 1/0 binary - 1 if the response was 1, and 0 for anything else. For most survey waves, the ration purchase question was - “Has the household purchased things from the ration shop in the last 30 days?” and respondents answered 1 for Yes and 2 for No. This data was converted to a 1/0 binary - 1 if the response was 1, and 0 for 2.
+
+Wave 55 lacked data on the ration purchases question, so we assumed a 1 for all households. Waves 60, 62, and 63 lacked data on the food sufficiency question, so we assumed a 1 for all households. 
+
+\newpage
+
+**MDM Implementation Date and Treatment Year by State**
+
+\FloatBarrier
+
+```{r,echo=FALSE}
+kable(treatment_data)
+```
+
+**Food Expenditure Grouped By Treatment Year**
+
+\FloatBarrier
+
+```{r, echo=FALSE}
+chart6
+```
+
+\FloatBarrier
+
+\newpage
+
+**Food Expenditure vs. Ration Purchases**
+
+\FloatBarrier
+
+```{r, echo=FALSE}
+chart8
+```
+
+\FloatBarrier
+
+The scatterplot shows a loose positive relationship between average per capita monthly food expenditure and the percentage of households purchasing rations. This might be explained by the idea that households that have a ration card are incentivised to buy food at subsidized rates and hence increase their consumption. It may also be that spending less on the typical ration store items leaves them with more disposable income to spend on other food items.
+
+\newpage
+
+**Food Expenditure vs. Food Sufficiency**
+
+\FloatBarrier
+
+```{r, echo=FALSE}
+chart9
+```
+
+\FloatBarrier
+
+The scatterplot shows a loose positive relationship between average per capita monthly food expenditure and the percentage of households indicating total food sufficiency, i.e. that all members received two square meals a day. This is intuitive in that higher food expenditure indicates greater spending resources allocated to food. It also justifies our use of the state-average per capita monthly food expenditure as the outcome variable that represents food-related outcomes which may be affected by the MDMS.
